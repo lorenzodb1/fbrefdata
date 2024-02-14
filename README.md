@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/lorenzodb1/fbrefdata/master/docs/_static/logo2.png" width="300px"/>
+  <img src="https://raw.githubusercontent.com/lorenzodb1/fbrefdata/master/docs/_static/logo.png" width="300px"/>
 </p>
 
 **FBrefData** is a scraper of football data from [FBref](https://www.fbref.com/en/). The library is forked from 
