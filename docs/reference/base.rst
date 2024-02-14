@@ -13,10 +13,10 @@ and is used by scrapers that do not require JavaScript to be executed. The
 :class:`BaseSeleniumReader` is a wrapper around the `selenium` library and is
 used by scrapers that require JavaScript to be executed.
 
-.. autoclass:: soccerdata._common.BaseRequestsReader
+.. autoclass:: fbrefdata._common.BaseRequestsReader
    :inherited-members:
    :members:
 
-.. autoclass:: soccerdata._common.BaseSeleniumReader
+.. autoclass:: fbrefdata._common.BaseSeleniumReader
    :inherited-members:
    :members:

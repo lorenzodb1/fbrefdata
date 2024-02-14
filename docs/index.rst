@@ -1,53 +1,42 @@
 =============================
-Welcome to SoccerData's docs!
+Welcome to FBrefData's docs!
 =============================
 
-Release v\ |release|. (``pip install soccerdata``)
+Release v\ |release|. (``pip install fbrefdata``)
 
 
-.. image:: https://pepy.tech/badge/soccerdata/month
-    :target: https://pepy.tech/project/soccerdata
+.. image:: https://pepy.tech/badge/fbrefdata/month
+    :target: https://pepy.tech/project/fbrefdata
     :alt: SoccerData Downloads Per Month Badge
 
-.. image:: https://img.shields.io/pypi/l/soccerdata.svg
-    :target: https://pypi.org/project/soccerdata/
+.. image:: https://img.shields.io/pypi/l/fbrefdata.svg
+    :target: https://pypi.org/project/fbrefdata/
     :alt: License Badge
 
-.. image:: https://img.shields.io/pypi/pyversions/soccerdata.svg
-    :target: https://pypi.org/project/soccerdata/
+.. image:: https://img.shields.io/pypi/pyversions/fbrefdata.svg
+    :target: https://pypi.org/project/fbrefdata/
     :alt: Python Version Support Badge
 
 
-**SoccerData** is a collection of scrapers to gather soccer data from popular
-websites, including `Club Elo`_, `ESPN`_, `FBref`_, `FiveThirtyEight`_,
-`Football-Data.co.uk`_, `FotMob`_, `SoFIFA`_, `Understat`_  and `WhoScored`_.
+**FBrefData** is a collection of scrapers to gather soccer data from `FBref`_.
 
 .. code:: python
 
-   import soccerdata as sd
+   import fbrefdata as sd
 
    # Create a scraper class instance for the 2018/19 Premier League
-   five38 = sd.FiveThirtyEight('ENG-Premier League', '1819')
+   fbref = sd.FBref('ENG-Premier League', '1819')
 
    # Fetch data
-   games = five38.read_games()
-   forecasts = five38.read_forecasts()
-   clinches = five38.read_clinches()
-
-
+   schedule = fbref.read_schedule()
 -------------------
 
 **Main features**
 
 - Access current and historical soccer fixtures, forecasts, detailed match
   stats, event stream data and more.
-- All data is provided in the form of Pandas DataFrames with sensible,
-  matching column names and identifiers across datasets to make working with
-  the data and combining data from multiple sources easy.
 - Data is only downloaded when needed and cached locally to speed up your
   analyis scripts.
-- Integrates with the `socceraction`_ package to allow analysis of event stream
-  data.
 
 Do you like it? :doc:`Let's dive in! <intro>`
 
@@ -63,15 +52,6 @@ Do you like it? :doc:`Let's dive in! <intro>`
    faq
    contributing
    License <license>
-   Changelog <https://github.com/probberechts/soccerdata/releases>
+   Changelog <https://github.com/lorenzodb1/fbrefdata/releases>
 
-.. _socceraction: https://socceraction.readthedocs.io/en/latest/documentation/data/opta.html#whoscored
-.. _Club Elo: https://www.clubelo.com/
-.. _ESPN: https://www.espn.com/soccer/
 .. _FBref: https://www.fbref.com/en/
-.. _FiveThirtyEight: https://fivethirtyeight.com/soccer-predictions/
-.. _Football-Data.co.uk: https://www.football-data.co.uk/
-.. _FotMob: https://fotmob.com/
-.. _SoFIFA: https://sofifa.com/
-.. _Understat: https://understat.com/
-.. _WhoScored: https://www.whoscored.com/

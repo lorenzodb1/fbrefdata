@@ -47,7 +47,7 @@ regulations.
 
 **Something doesn’t work**
 
-1. Have you updated to the newest version of soccerdata?
+1. Have you updated to the newest version of fbrefdata?
 2. Clear the cache or run your script without caching enabled.
 3. Does the log produce any warnings that sound like they might be related?
    Maybe the data you are looking for is not available or can not be processed

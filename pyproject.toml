@@ -1,13 +1,13 @@
 [tool.poetry]
-name = "soccerdata"
-version = "1.5.3"
-description = "A collection of wrappers over soccer data from various websites / APIs."
-authors = ["Pieter Robberechts <pieter.robberechts@kuleuven.be>"]
+name = "fbrefdata"
+version = "0.1.0"
+description = "A scraper of soccer data from FBref."
+authors = ["Lorenzo De Bernardini <lorenzo@envs.net>"]
 license = "Apache-2.0"
 readme = 'README.rst'
-homepage = "https://github.com/probberechts/soccerdata"
-repository = "https://github.com/probberechts/soccerdata"
-keywords = ["soccer", "football", "soccer data", "web scraping", "soccer analytics"]
+homepage = "https://github.com/lorenzodb1/fbrefdata"
+repository = "https://github.com/lorenzodb1/fbrefdata"
+keywords = ["fbref", "soccer", "football", "soccer data", "web scraping", "soccer analytics"]
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
@@ -51,13 +51,16 @@ pytest-mock = "^3.10.0"
 bumpversion = "^0.6.0"
 nbsphinx = "^0.9.0"
 
+[tool.poetry.group.dev.dependencies]
+nox = "^2023.4.22"
+
 [tool.isort]
 profile = "black"
-src_paths = ["soccerdata", "tests"]
+src_paths = ["fbrefdata", "tests"]
 balanced_wrapping = true
 default_section = "THIRDPARTY"
 include_trailing_comma = true
-known_first_party = ["soccerdata", "tests"]
+known_first_party = ["fbrefdata", "tests"]
 line_length = 79
 multi_line_output = 3
 
@@ -68,11 +71,11 @@ skip-string-normalization = 1
 include = '\.pyi?$'
 
 [tool.coverage.paths]
-source = ["soccerdata", "*/site-packages"]
+source = ["fbrefdata", "*/site-packages"]
 
 [tool.coverage.run]
 branch = true
-source = ["soccerdata"]
+source = ["fbrefdata"]
 
 [tool.coverage.report]
 show_missing = true

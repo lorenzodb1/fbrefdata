@@ -4,7 +4,6 @@ import pprint
 import random
 import re
 import time
-import warnings
 from abc import ABC, abstractmethod
 from datetime import date, datetime, timedelta
 from pathlib import Path
@@ -19,7 +18,7 @@ from dateutil.relativedelta import relativedelta
 from packaging import version
 from selenium.common.exceptions import WebDriverException
 
-from ._config import DATA_DIR, LEAGUE_DICT, MAXAGE, logger
+from ._config import DATA_DIR, get_all_leagues, logger
 
 
 class BaseReader(ABC):
@@ -71,9 +70,9 @@ class BaseReader(ABC):
                 "https": "socks5://127.0.0.1:9050",
             }
         elif isinstance(proxy, dict):
-            self.proxy = lambda: proxy
+            self.proxy = lambda: proxy  # type: ignore
         elif isinstance(proxy, list):
-            self.proxy = lambda: random.choice(proxy)
+            self.proxy = lambda: random.choice(proxy)  # type: ignore
         elif callable(proxy):
             self.proxy = proxy
         else:
@@ -95,10 +94,11 @@ class BaseReader(ABC):
         self,
         url: str,
         filepath: Optional[Path] = None,
-        max_age: Optional[Union[int, timedelta]] = MAXAGE,
+        max_age: Optional[Union[int, timedelta]] = None,
         no_cache: bool = False,
-        var: Optional[Union[str, Iterable[str]]] = None,
-    ) -> IO[bytes]:
+        header: List[int] = None,
+        var: Optional[str] = None,
+    ) -> IO[bytes] | pd.DataFrame:
         """Load data from `url`.
 
         By default, the source of `url` is downloaded and saved to `filepath`.
@@ -110,13 +110,15 @@ class BaseReader(ABC):
         url : str
             URL to download.
         filepath : Path, optional
-            Path to save downloaded file. If None, downloaded data is not cached.
+            Path to save downloaded data. If None, downloaded data is not cached.
         max_age : int for age in days, or timedelta object
             The max. age of locally cached file before re-download.
         no_cache : bool
             If True, will not use cached data. Overrides the class property.
-        var : str or list of str, optional
-            Return a JavaScript variable instead of the page source.
+        header : list
+            Levels of the cached dataframe.
+        var : str, optional
+            Return a javascript variable instead of the page source.
 
         Raises
         ------
@@ -131,10 +133,11 @@ class BaseReader(ABC):
         is_cached = self._is_cached(filepath, max_age)
         if no_cache or self.no_cache or not is_cached:
             logger.debug("Scraping %s", url)
-            return self._download_and_save(url, filepath, var)
+            return self._download(url, var)
         logger.debug("Retrieving %s from cache", url)
         assert filepath is not None
-        return filepath.open(mode="rb")
+        header = header or [0]
+        return pd.read_csv(filepath, header=header)
 
     def _is_cached(
         self,
@@ -167,7 +170,7 @@ class BaseReader(ABC):
             elif isinstance(max_age, timedelta):
                 _max_age = max_age
             else:
-                raise TypeError("'max_age' must be of type int or datetime.timedelta")
+                raise TypeError("max_age must be of type int or datetime.timedelta")
         else:
             _max_age = None
 
@@ -181,12 +184,16 @@ class BaseReader(ABC):
 
         return not cache_invalid and filepath is not None and filepath.exists()
 
+    def save(self, df: pd.DataFrame, filepath: Path) -> None:
+        """Save DataFrame to filepath."""
+        if not self.no_store and filepath is not None:
+            df.to_csv(filepath, index=False)
+
     @abstractmethod
-    def _download_and_save(
+    def _download(
         self,
         url: str,
-        filepath: Optional[Path] = None,
-        var: Optional[Union[str, Iterable[str]]] = None,
+        var: Optional[str] = None,
     ) -> IO[bytes]:
         """Download data at `url` to `filepath`.
 
@@ -194,10 +201,8 @@ class BaseReader(ABC):
         ----------
         url : str
             URL to download.
-        filepath : Path, optional
-            Path to save downloaded file. If None, downloaded data is not cached.
-        var : str or list of str, optional
-            Return a JavaScript variable instead of the page source.
+        var : str, optional
+            Return a javascript variable instead of the page source.
 
         Returns
         -------
@@ -213,10 +218,9 @@ class BaseReader(ABC):
     @classmethod
     def _all_leagues(cls) -> Dict[str, str]:
         """Return a dict mapping all canonical league IDs to source league IDs."""
-        if not hasattr(cls, "_all_leagues_dict"):
-            cls._all_leagues_dict = {  # type: ignore
-                k: v[cls.__name__] for k, v in LEAGUE_DICT.items() if cls.__name__ in v
-            }
+        cls._all_leagues_dict = {  # type: ignore
+            k: v[cls.__name__] for k, v in get_all_leagues().items() if cls.__name__ in v
+        }
         return cls._all_leagues_dict  # type: ignore
 
     @classmethod
@@ -256,12 +260,13 @@ class BaseReader(ABC):
 
     def _is_complete(self, league: str, season: str) -> bool:
         """Check if a season is complete."""
-        if league in LEAGUE_DICT:
-            league_dict = LEAGUE_DICT[league]
+        all_leagues = get_all_leagues()
+        if league in all_leagues:
+            league_dict = all_leagues[league]
         else:
             flip = {v: k for k, v in self._all_leagues().items()}
             if league in flip:
-                league_dict = LEAGUE_DICT[flip[league]]
+                league_dict = all_leagues[flip[league]]
             else:
                 raise ValueError(f"Invalid league '{league}'")
         if "season_end" not in league_dict:
@@ -333,11 +338,10 @@ class BaseRequestsReader(BaseReader):
         session.proxies.update(self.proxy())
         return session
 
-    def _download_and_save(
+    def _download(
         self,
         url: str,
-        filepath: Optional[Path] = None,
-        var: Optional[Union[str, Iterable[str]]] = None,
+        var: Optional[str] = None,
     ) -> IO[bytes]:
         """Download file at url to filepath. Overwrites if filepath exists."""
         for i in range(5):
@@ -345,24 +349,7 @@ class BaseRequestsReader(BaseReader):
                 response = self._session.get(url, stream=True)
                 time.sleep(self.rate_limit + random.random() * self.max_delay)
                 response.raise_for_status()
-                if var is not None:
-                    if isinstance(var, str):
-                        var = [var]
-                    var_names = "|".join(var)
-                    template_understat = br"(%b)+[\s\t]*=[\s\t]*JSON\.parse\('(.*)'\)"
-                    pattern_understat = template_understat % bytes(var_names, encoding="utf-8")
-                    results = re.findall(pattern_understat, response.content)
-                    data = {
-                        key.decode("unicode_escape"): json.loads(value.decode("unicode_escape"))
-                        for key, value in results
-                    }
-                    payload = json.dumps(data).encode("utf-8")
-                else:
-                    payload = response.content
-                if not self.no_store and filepath is not None:
-                    with filepath.open(mode="wb") as fh:
-                        fh.write(payload)
-                return io.BytesIO(payload)
+                return io.BytesIO(response.content)
             except Exception:
                 logger.exception(
                     "Error while scraping %s. Retrying... (attempt %d of 5).", url, i + 1
@@ -439,11 +426,10 @@ class BaseSeleniumReader(BaseReader):
             chrome_options.add_argument("--host-resolver-rules=" + resolver_rules)
         return uc.Chrome(options=chrome_options)
 
-    def _download_and_save(  # noqa: C901
+    def _download(  # noqa: C901
         self,
         url: str,
-        filepath: Optional[Path] = None,
-        var: Optional[Union[str, Iterable[str]]] = None,
+        var: Optional[str] = None,
     ) -> IO[bytes]:
         """Download file at url to filepath. Overwrites if filepath exists."""
         for i in range(5):
@@ -459,15 +445,9 @@ class BaseSeleniumReader(BaseReader):
                         "return document.body.innerHTML;"
                     ).encode("utf-8")
                 else:
-                    if not isinstance(var, str):
-                        raise NotImplementedError("Only implemented for single variables.")
                     response = json.dumps(self._driver.execute_script("return " + var)).encode(
                         "utf-8"
                     )
-                if not self.no_store and filepath is not None:
-                    filepath.parent.mkdir(parents=True, exist_ok=True)
-                    with filepath.open(mode="wb") as fh:
-                        fh.write(response)
                 return io.BytesIO(response)
             except Exception:
                 logger.exception(
@@ -487,35 +467,27 @@ def season_code(season: Union[str, int]) -> str:  # noqa: C901
     pat3 = re.compile(r"^[0-9]{4}-[0-9]{4}$")  # 1994-1995
     pat4 = re.compile(r"^[0-9]{4}/[0-9]{4}$")  # 1994/1995
     pat5 = re.compile(r"^[0-9]{4}-[0-9]{2}$")  # 1994-95
-    pat6 = re.compile(r"^[0-9]{2}-[0-9]{2}$")  # 94-95
 
     if re.match(pat1, season):
         if int(season[2:]) == int(season[:2]) + 1:
             if season == "2021":
-                msg = 'Season id "{}" is ambiguous: interpreting as "{}-{}"'.format(
-                    season, season[:2], season[-2:]
-                )
-                warnings.warn(msg, stacklevel=1)
-            return season  # 9495
+                return "-".join([season[-2:], f"{int(season[-2:]) + 1:02d}"])
         elif season[2:] == "99":
-            return "".join([season[2:], "00"])  # 1999
+            return "-".join([season[2:], "00"])  # 1999
         else:
-            return "".join([season[-2:], f"{int(season[-2:]) + 1:02d}"])  # 1994
+            return "-".join([season[-2:], f"{int(season[-2:]) + 1:02d}"])  # 1994
     elif re.match(pat2, season):
         if season == "99":
-            return "".join([season, "00"])  # 99
+            return "-".join([season, "00"])  # 99
         else:
-            return "".join([season, f"{int(season) + 1:02d}"])  # 94
+            return "-".join([season, f"{int(season) + 1:02d}"])  # 94
     elif re.match(pat3, season):
-        return "".join([season[2:4], season[-2:]])  # 1994-1995
+        return "-".join([season[2:4], season[-2:]])  # 1994-1995
     elif re.match(pat4, season):
-        return "".join([season[2:4], season[-2:]])  # 1994/1995
+        return "-".join([season[2:4], season[-2:]])  # 1994/1995
     elif re.match(pat5, season):
-        return "".join([season[2:4], season[-2:]])  # 1994-95
-    elif re.match(pat6, season):
-        return "".join([season[:2], season[-2:]])  # 94-95
-    else:
-        return season
+        return "-".join([season[2:4], season[-2:]])  # 1994-95
+    return "-".join([season[:2], season[-2:]])  # 94-95
 
 
 def make_game_id(row: pd.Series) -> str:

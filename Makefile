@@ -1,8 +1,8 @@
 .PHONY: init test lint pretty
 
 BIN = .venv/bin/
-CODE = soccerdata
-PY = 3.9
+CODE = fbrefdata
+PY = 3.11
 
 init:
 	python3 -m venv .venv
@@ -30,5 +30,6 @@ bump_patch:
 	$(BIN)bumpversion patch
 
 clean:
+	rm -rf .venv
 	find . -type f -name "*.py[co]" -delete
 	find . -type d -name "__pycache__" -delete

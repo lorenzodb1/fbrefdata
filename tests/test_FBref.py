@@ -1,10 +1,10 @@
-"""Unittests for class soccerdata.FBref."""
-
+"""Unittests for class fbrefdata.FBref."""
 import pandas as pd
 import pytest
 
-import soccerdata as sd
-from soccerdata.fbref import FBref, _concat
+import fbrefdata as fd
+import fbrefdata._common
+from fbrefdata.fbref import FBref, _concat
 
 
 @pytest.mark.parametrize(
@@ -83,20 +83,20 @@ def test_read_schedule(fbref_ligue1: FBref) -> None:
 )
 def test_read_player_match_stats(fbref_ligue1: FBref, stat_type: str) -> None:
     assert isinstance(
-        fbref_ligue1.read_player_match_stats(stat_type, match_id="796787da"), pd.DataFrame
+        fbref_ligue1.read_player_match_stats(stat_type, match_id="0be209c9"), pd.DataFrame
     )
 
 
 def test_read_events(fbref_ligue1: FBref) -> None:
-    assert isinstance(fbref_ligue1.read_events(match_id="796787da"), pd.DataFrame)
+    assert isinstance(fbref_ligue1.read_events(match_id="0be209c9"), pd.DataFrame)
 
 
 def test_read_shot_events(fbref_ligue1: FBref) -> None:
-    assert isinstance(fbref_ligue1.read_shot_events(match_id="796787da"), pd.DataFrame)
+    assert isinstance(fbref_ligue1.read_shot_events(match_id="0be209c9"), pd.DataFrame)
 
 
 def test_read_lineup(fbref_ligue1: FBref) -> None:
-    assert isinstance(fbref_ligue1.read_lineup(match_id="796787da"), pd.DataFrame)
+    assert isinstance(fbref_ligue1.read_lineup(match_id="0be209c9"), pd.DataFrame)
 
 
 def test_concat() -> None:
@@ -129,8 +129,16 @@ def test_concat() -> None:
     )
 
 
-def test_concat_with_forfeited_game() -> None:
-    fbref_seriea = sd.FBref(["ITA-Serie A"], 2021)
+def test_concat_with_forfeited_game(mocker) -> None:
+    mock_leagues = {
+        "ITA-Serie A": {
+            "FBref": "Serie A",
+            "season_start": "Aug",
+            "season_end": "May"
+        }
+    }
+    mocker.patch.object(fbrefdata._common, "get_all_leagues", return_value=mock_leagues)
+    fbref_seriea = fd.FBref(["ITA-Serie A"], "20-21")
     df_1 = fbref_seriea.read_player_match_stats(match_id=["e0a20cfe", "34e95e35"])
     df_2 = fbref_seriea.read_player_match_stats(match_id=["e0a20cfe", "a3e10e13"])
     assert isinstance(df_1, pd.DataFrame)
@@ -139,8 +147,36 @@ def test_concat_with_forfeited_game() -> None:
     assert df_1.columns.equals(df_2.columns)
 
 
-def test_combine_big5() -> None:
-    fbref_bigfive = sd.FBref(["Big 5 European Leagues Combined"], 2021)
+def test_combine_big5(mocker) -> None:
+    mock_leagues = {
+        "ENG-Premier League": {
+            "FBref": "Premier League",
+            "season_start": "Aug",
+            "season_end": "May"
+        },
+        "FRA-Ligue 1": {
+            "FBref": "Ligue 1",
+            "season_start": "Aug",
+            "season_end": "May"
+        },
+        "GER-Bundesliga": {
+            "FBref": "Fußball-Bundesliga",
+            "season_start": "Aug",
+            "season_end": "May"
+        },
+        "ITA-Serie A": {
+            "FBref": "Serie A",
+            "season_start": "Aug",
+            "season_end": "May"
+        },
+        "SPA-La Liga": {
+            "FBref": "La Liga",
+            "season_start": "Aug",
+            "season_end": "May"
+        }
+    }
+    mocker.patch.object(fbrefdata._common, "get_all_leagues", return_value=mock_leagues)
+    fbref_bigfive = fd.FBref(["Big 5 European Leagues Combined"], 2021)
     assert len(fbref_bigfive.read_leagues(split_up_big5=False)) == 1
     assert len(fbref_bigfive.read_seasons(split_up_big5=False)) == 1
     assert len(fbref_bigfive.read_leagues(split_up_big5=True)) == 5
@@ -167,7 +203,8 @@ def test_combine_big5() -> None:
     ],
 )
 def test_combine_big5_team_season_stats(fbref_ligue1: FBref, stat_type: str) -> None:
-    fbref_bigfive = sd.FBref(["Big 5 European Leagues Combined"], 2021)
+    fbref_ligue1 = fd.FBref(["FRA-Ligue 1"], 2021, no_cache=True)
+    fbref_bigfive = fd.FBref(["Big 5 European Leagues Combined"], 2021, no_cache=True)
     ligue1 = fbref_ligue1.read_team_season_stats(stat_type).loc["FRA-Ligue 1"].reset_index()
     bigfive = fbref_bigfive.read_team_season_stats(stat_type).loc["FRA-Ligue 1"].reset_index()
     cols = _concat([ligue1, bigfive], key=["season"]).columns
@@ -196,7 +233,8 @@ def test_combine_big5_team_season_stats(fbref_ligue1: FBref, stat_type: str) -> 
     ],
 )
 def test_combine_big5_player_season_stats(fbref_ligue1: FBref, stat_type: str) -> None:
-    fbref_bigfive = sd.FBref(["Big 5 European Leagues Combined"], 2021)
+    fbref_ligue1 = fd.FBref(["FRA-Ligue 1"], 2021, no_cache=True)
+    fbref_bigfive = fd.FBref(["Big 5 European Leagues Combined"], 2021, no_cache=True)
     ligue1 = fbref_ligue1.read_player_season_stats(stat_type).loc["FRA-Ligue 1"].reset_index()
     bigfive = fbref_bigfive.read_player_season_stats(stat_type).loc["FRA-Ligue 1"].reset_index()
     cols = _concat([ligue1, bigfive], key=["season"]).columns

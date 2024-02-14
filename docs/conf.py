@@ -1,13 +1,10 @@
 """Sphinx configuration."""
-
-# -- Project information -----------------------------------------------------
-
-project = "soccerdata"
-author = "Pieter Robberechts"
-copyright = f"2021, {author}"
+project = "fbrefdata"
+author = "Lorenzo De Bernardini"
+copyright = f"2023, {author}"
 
 # The full version, including alpha/beta/rc tags
-release = '1.5.3'
+release = '0.1.0'
 
 # -- General configuration ------------------------------------------------
 

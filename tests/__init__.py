@@ -1,1 +1,1 @@
-"""Test suite for the soccerdata package."""
+"""Test suite for the fbrefdata package."""

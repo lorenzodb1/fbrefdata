@@ -1,7 +1,7 @@
-.. soccerdata package index documentation toctree
+.. fbrefdata package index documentation toctree
 .. _api:
 
-.. currentmodule:: soccerdata
+.. currentmodule:: fbrefdata
 
 API Reference
 =============
@@ -11,17 +11,9 @@ data scrapers.
 
 .. toctree::
 
-   clubelo
-   espn
    fbref
-   fivethirtyeight
-   fotmob
-   matchhistory
-   sofifa
-   understat
-   whoscored
 
-If you would like to extend the functionality of soccerdata, you might also be
+If you would like to extend the functionality of fbrefdata, you might also be
 interested in the following modules:
 
 .. toctree::

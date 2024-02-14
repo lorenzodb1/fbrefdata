@@ -21,7 +21,7 @@ except ImportError:
     raise SystemExit(dedent(message)) from None
 
 
-package = "soccerdata"
+package = "fbrefdata"
 python_versions = ["3.11", "3.10", "3.9", "3.8"]
 nox.needs_version = ">= 2021.6.6"
 nox.options.sessions = (
@@ -128,7 +128,7 @@ def precommit(session: Session) -> None:
 @session(python=python_versions)
 def mypy(session: Session) -> None:
     """Type-check using mypy."""
-    args = session.posargs or ["soccerdata", "tests", "docs/conf.py"]
+    args = session.posargs or ["fbrefdata", "tests", "docs/conf.py"]
     session.install(".")
     session.install("mypy", "pytest")
     session.run("mypy", "--install-types", "--non-interactive", *args)
@@ -143,18 +143,7 @@ def tests(session: Session) -> None:
     session.install(".")
     session.install("coverage[toml]", "pytest", "pytest-mock", "time-machine", "pygments")
     try:
-        session.run(
-            "coverage",
-            "run",
-            "--parallel",
-            "-m",
-            "pytest",
-            *args,
-            env={
-                'SOCCERDATA_DIR': str(Path(__file__).parent / "tests" / "appdata"),
-                'MAXAGE': '604800',
-            },
-        )
+        session.run("coverage", "run", "--parallel", "-m", "pytest", *args, env={"FBREFDATA_DIR": "tests/.test_data"})
     finally:
         if session.interactive:
             session.notify("coverage", posargs=[])
@@ -187,7 +176,7 @@ def docs_build(session: Session) -> None:
     if build_dir.exists():
         shutil.rmtree(build_dir)
 
-    session.run("sphinx-build", *args, env={'SOCCERDATA_DIR': str(Path.home() / 'soccerdata')})
+    session.run("sphinx-build", *args, env={"FBREFDATA_DIR": "tests/.test_data"})
 
 
 @session(python=python_versions[0])
@@ -201,4 +190,4 @@ def docs(session: Session) -> None:
     if build_dir.exists():
         shutil.rmtree(build_dir)
 
-    session.run("sphinx-autobuild", *args, env={'SOCCERDATA_DIR': str(Path.home() / 'soccerdata')})
+    session.run("sphinx-autobuild", *args, env={"FBREFDATA_DIR": "tests/.test_data"})

@@ -5,9 +5,7 @@ Contributor Guide
 This document lays out guidelines and advice for contributing to this project.
 If you're thinking of contributing, please start by reading this document and
 getting a feel for how contributing to this project works. If you have any
-questions, feel free to reach out to `Pieter Robberechts`_, the primary maintainer.
-
-.. _Pieter Robberechts: https://people.cs.kuleuven.be/~pieter.robberechts/
+questions, feel free to open an issue.
 
 The guide is split into sections based on the type of contribution you're
 thinking of making.
@@ -25,7 +23,7 @@ hasn't been reported before.
 When filing an issue, make sure to answer these questions:
 
 - Which Python version are you using?
-- Which version of soccerdata are you using?
+- Which version of fbrefdata are you using?
 - What did you do?
 - What did you expect to see?
 - What did you see instead?
@@ -33,7 +31,7 @@ When filing an issue, make sure to answer these questions:
 The best way to get your bug fixed is to provide a test case,
 and/or steps to reproduce the issue.
 
-.. _GitHub issues: https://github.com/probberechts/soccerdata/issues
+.. _GitHub issues: https://github.com/lorenzodb1/fbrefdata/issues
 
 
 Feature Requests
@@ -42,7 +40,7 @@ Feature Requests
 If you believe there is a feature missing, feel free to raise a feature
 request on the `Issue Tracker`_.
 
-.. _Issue tracker: https://github.com/probberechts/soccerdata/issues
+.. _Issue tracker: https://github.com/lorenzodb1/fbrefdata/issues
 
 
 Documentation Contributions
@@ -81,7 +79,7 @@ project.
 Setting up your development environment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You need Python 3.7.1+ and the following tools:
+You need Python 3.9+ and the following tools:
 
 - Poetry_
 - Nox_
@@ -151,7 +149,7 @@ and are written using the pytest_ testing framework.
 Code style
 ~~~~~~~~~~~
 
-The soccerdata codebase uses the `PEP 8`_ code style. In addition, we have
+The fbrefdata codebase uses the `PEP 8`_ code style. In addition, we have
 a few guidelines:
 
 - Line-length can exceed 79 characters, to 100, when convenient.
@@ -193,5 +191,5 @@ can install pre-commit as a Git hook by running the following command:
 
 It is recommended to open an issue before starting work on anything.
 
-.. _pull request: https://github.com/probberechts/soccerdata/pulls
+.. _pull request: https://github.com/lorenzodb1/fbrefdata/pulls
 .. github-only
