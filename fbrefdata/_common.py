@@ -70,9 +70,9 @@ class BaseReader(ABC):
                 "https": "socks5://127.0.0.1:9050",
             }
         elif isinstance(proxy, dict):
-            self.proxy = lambda: proxy  # type: ignore
+            self.proxy = lambda: proxy
         elif isinstance(proxy, list):
-            self.proxy = lambda: random.choice(proxy)  # type: ignore
+            self.proxy = lambda: random.choice(proxy)
         elif callable(proxy):
             self.proxy = proxy
         else:
@@ -96,7 +96,7 @@ class BaseReader(ABC):
         filepath: Optional[Path] = None,
         max_age: Optional[Union[int, timedelta]] = None,
         no_cache: bool = False,
-        header: List[int] = None,
+        header: Optional[List[int]] = None,
         var: Optional[str] = None,
     ) -> IO[bytes] | pd.DataFrame:
         """Load data from `url`.

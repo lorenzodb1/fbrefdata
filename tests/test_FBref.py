@@ -129,7 +129,7 @@ def test_concat() -> None:
     )
 
 
-def test_concat_with_forfeited_game(mocker) -> None:
+def test_concat_with_forfeited_game(mocker) -> None:   # type: ignore
     mock_leagues = {
         "ITA-Serie A": {
             "FBref": "Serie A",
@@ -147,7 +147,7 @@ def test_concat_with_forfeited_game(mocker) -> None:
     assert df_1.columns.equals(df_2.columns)
 
 
-def test_combine_big5(mocker) -> None:
+def test_combine_big5(mocker) -> None:  # type: ignore
     mock_leagues = {
         "ENG-Premier League": {
             "FBref": "Premier League",
