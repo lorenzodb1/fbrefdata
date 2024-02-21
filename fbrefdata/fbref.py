@@ -164,6 +164,8 @@ class FBref(BaseRequestsReader):
                 (set(self.leagues) - {"Big 5 European Leagues Combined"})
                 | set(BIG_FIVE_DICT.values())
             )
+        elif set(BIG_FIVE_DICT.values()).issubset(set(self.leagues)) and not split_up_big5:
+            leagues = list(set(self.leagues) - set(BIG_FIVE_DICT.values()))
         return df[df.index.isin(leagues)]
 
     def read_seasons(self, split_up_big5: bool = False) -> pd.DataFrame:
