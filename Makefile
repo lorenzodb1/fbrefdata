@@ -5,7 +5,7 @@ CODE = fbrefdata
 PY312 = 3.12
 PY311 = 3.11
 PY310 = 3.10
-PY = $(PY310)
+PY = $(PY311)
 
 init:
 	python3 -m venv .venv
