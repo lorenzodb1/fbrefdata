@@ -22,7 +22,7 @@ except ImportError:
 
 
 package = "fbrefdata"
-python_versions = ["3.13", "3.12", "3.11", "3.10", "3.9"]
+python_versions = ["3.12", "3.11", "3.10", "3.9"]
 nox.needs_version = ">= 2021.6.6"
 nox.options.sessions = (
     "pre-commit",
@@ -143,7 +143,15 @@ def tests(session: Session) -> None:
     session.install(".")
     session.install("coverage[toml]", "pytest", "pytest-mock", "time-machine", "pygments")
     try:
-        session.run("coverage", "run", "--parallel", "-m", "pytest", *args, env={"FBREFDATA_DIR": "tests/.test_data"})
+        session.run(
+            "coverage",
+            "run",
+            "--parallel",
+            "-m",
+            "pytest",
+            *args,
+            env={"FBREFDATA_DIR": "tests/.test_data"},
+        )
     finally:
         if session.interactive:
             session.notify("coverage", posargs=[])
