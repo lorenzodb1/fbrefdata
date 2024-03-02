@@ -316,7 +316,7 @@ class FBref(BaseRequestsReader):
                 (html_table,) = tree.xpath(
                     f"//table[@id='stats_teams_{stat_type}' or @id='stats_squads_{stat_type}']"
                 )
-                df_table = _parse_table(html_table)
+                df_table = _parse_table(html_table, "team")
                 df_table["league"] = lkey
                 df_table["season"] = skey
                 df_table["url"] = html_table.xpath(".//*[@data-stat='team']/a/@href")
@@ -471,7 +471,7 @@ class FBref(BaseRequestsReader):
                 for elem in html_table.xpath("//tfoot"):
                     elem.getparent().remove(elem)
                 # parse table
-                df_table = _parse_table(html_table)
+                df_table = _parse_table(html_table, "team")
                 df_table["season"] = skey
                 df_table["team"] = team
                 df_table["id"] = id
@@ -618,7 +618,7 @@ class FBref(BaseRequestsReader):
                 for elem in tree.xpath("//td[@data-stat='comp_level']//span"):
                     elem.getparent().remove(elem)
                 if big_five:
-                    df_table = _parse_table(tree, player_table=True)
+                    df_table = _parse_table(tree, "player")
                     df_table[("Unnamed: league", "league")] = (
                         df_table.xs("Comp", axis=1, level=1).squeeze().map(BIG_FIVE_DICT)
                     )
@@ -633,7 +633,7 @@ class FBref(BaseRequestsReader):
                     (html_table,) = etree.fromstring(el.text, parser).xpath(
                         f"//table[contains(@id, 'stats_{stat_type}')]"
                     )
-                    df_table = _parse_table(html_table)
+                    df_table = _parse_table(html_table, "player")
                     df_table[("Unnamed: league", "league")] = lkey
                     df_table[("Unnamed: season", "season")] = skey
                 df_table = _fix_nation_col(df_table)
@@ -843,7 +843,7 @@ class FBref(BaseRequestsReader):
                     id_format = "stats_{}_" + stat_type
                 html_table = tree.find("//table[@id='" + id_format.format(home_team["id"]) + "']")
                 if html_table is not None:
-                    df_table = _parse_table(html_table)
+                    df_table = _parse_table(html_table, "player")
                     df_table["team"] = home_team["name"]
                     df_table["game"] = game["game"]
                     df_table["league"] = game["league"]
@@ -856,7 +856,7 @@ class FBref(BaseRequestsReader):
                     )
                 html_table = tree.find("//table[@id='" + id_format.format(away_team["id"]) + "']")
                 if html_table is not None:
-                    df_table = _parse_table(html_table)
+                    df_table = _parse_table(html_table, "player")
                     df_table["team"] = away_team["name"]
                     df_table["game"] = game["game"]
                     df_table["league"] = game["league"]
@@ -1162,13 +1162,16 @@ class FBref(BaseRequestsReader):
         return df
 
 
-def _parse_table(html_table: html.HtmlElement) -> pd.DataFrame:
+def _parse_table(html_table: html.HtmlElement, table_type: Optional[str] = None) -> pd.DataFrame:
     """Parse HTML table into a dataframe.
 
     Parameters
     ----------
     html_table : lxml.html.HtmlElement
         HTML table to clean up.
+    table_type : Optional[str]
+        Type of stats to retrieve. Must be either 'team' or 'player'.
+        If None, it will skip the step of retrieving the IDs.
 
     Returns
     -------
@@ -1188,14 +1191,11 @@ def _parse_table(html_table: html.HtmlElement) -> pd.DataFrame:
         elem.getparent().remove(elem)
     # override ranking with a unique id for each player to use as index
     ids = []
-    for elem in html_table.xpath(
-        "tbody/tr/td[@data-stat='player']/a"
-        " | tbody/tr/th[@data-stat='player']/a"
-        " | tbody/tr/td[@data-stat='team']/a"
-        " | tbody/tr/th[@data-stat='team']/a"
-    ):
-        id = elem.attrib["href"].split("/")[3]
-        ids.append(id)
+    if table_type:
+        for elem in html_table.xpath(
+            f"tbody/tr/td[@data-stat='{table_type}']/a | tbody/tr/th[@data-stat='{table_type}']/a"
+        ):
+            ids.append(elem.attrib["href"].split("/")[3])
     # parse HTML to dataframe
     (df_table,) = pd.read_html(html.tostring(html_table), flavor="lxml")
     if len(ids) > 0:
