@@ -618,7 +618,8 @@ class FBref(BaseRequestsReader):
                 for elem in tree.xpath("//td[@data-stat='comp_level']//span"):
                     elem.getparent().remove(elem)
                 if big_five:
-                    df_table = _parse_table(tree, "player")
+                    (html_table,) = tree.xpath(f"//table[contains(@id, 'stats_{stat_type}')]")
+                    df_table = _parse_table(html_table, "player")
                     df_table[("Unnamed: league", "league")] = (
                         df_table.xs("Comp", axis=1, level=1).squeeze().map(BIG_FIVE_DICT)
                     )
