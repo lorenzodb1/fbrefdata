@@ -1,4 +1,5 @@
 """Scraper for http://fbref.com."""
+
 import warnings
 from datetime import date, datetime
 from functools import reduce
@@ -336,8 +337,7 @@ class FBref(BaseRequestsReader):
             .rename(columns={"Squad": "team", "# Pl": "players_used"})
             .replace({"team": get_team_replacements()})
             # .pipe(standardize_colnames)
-            .set_index(["league", "season", "team"])
-            .sort_index()
+            .set_index(["id"])
         )
         return df
 
@@ -432,7 +432,8 @@ class FBref(BaseRequestsReader):
 
         # collect match logs for each team
         stats = []
-        for (_, skey, team), team_url in iterator.url.items():
+        iterator.set_index(["season", "team"], append=True, inplace=True)
+        for (id, skey, team), team_url in iterator.url.items():
             # read html page
             filepath = self.data_dir / filemask.format(team, skey, stat_type)
             if len(team_url.split('/')) == 6:  # already have season in the url
@@ -473,13 +474,16 @@ class FBref(BaseRequestsReader):
                 df_table = _parse_table(html_table)
                 df_table["season"] = skey
                 df_table["team"] = team
+                df_table["id"] = id
                 df_table["Time"] = [
                     x.get('csk', None) for x in html_table.xpath(".//td[@data-stat='start_time']")
                 ]
                 df_table["Match Report"] = [
-                    mlink.xpath("./a/@href")[0]
-                    if mlink.xpath("./a") and mlink.xpath("./a")[0].text == "Match Report"
-                    else None
+                    (
+                        mlink.xpath("./a/@href")[0]
+                        if mlink.xpath("./a") and mlink.xpath("./a")[0].text == "Match Report"
+                        else None
+                    )
                     for mlink in html_table.xpath(".//td[@data-stat='match_report']")
                 ]
                 nb_levels = df_table.columns.nlevels
@@ -527,7 +531,7 @@ class FBref(BaseRequestsReader):
             lambda x: x["team"] if x["venue"] == "Away" else x["opponent"], axis=1
         )
         df["game"] = df_tmp.apply(make_game_id, axis=1)
-        return df.set_index(["league", "season", "team", "game"]).sort_index().loc[self.leagues]
+        return df.set_index(["league"]).sort_index().loc[self.leagues]
 
     def read_player_season_stats(self, stat_type: str = "standard") -> pd.DataFrame:  # noqa: C901
         """Retrieve players from the datasource for the selected leagues and seasons.
@@ -614,7 +618,7 @@ class FBref(BaseRequestsReader):
                 for elem in tree.xpath("//td[@data-stat='comp_level']//span"):
                     elem.getparent().remove(elem)
                 if big_five:
-                    df_table = _parse_table(tree)
+                    df_table = _parse_table(tree, player_table=True)
                     df_table[("Unnamed: league", "league")] = (
                         df_table.xs("Comp", axis=1, level=1).squeeze().map(BIG_FIVE_DICT)
                     )
@@ -647,8 +651,7 @@ class FBref(BaseRequestsReader):
             .rename(columns={"Squad": "team"})
             .replace({"team": get_team_replacements()})
             .pipe(standardize_colnames, cols=["Player", "Nation", "Pos", "Age", "Born"])
-            .set_index(["league", "season", "team", "player"])
-            .sort_index()
+            .set_index(["id"])
         )
 
         return df
@@ -679,19 +682,26 @@ class FBref(BaseRequestsReader):
             if type(data) is not pd.DataFrame:
                 tree = html.parse(data)
 
-                url_fixtures = FBREF_API + tree.xpath("//a[text()='Scores & Fixtures']")[0].get("href")
+                url_fixtures = FBREF_API + tree.xpath("//a[text()='Scores & Fixtures']")[0].get(
+                    "href"
+                )
                 filepath_fixtures = self.data_dir / f"schedule_{lkey}_{skey}.csv"
                 current_season = not self._is_complete(lkey, skey)
                 data_fixtures = self.get(
-                    url_fixtures, filepath_fixtures, no_cache=current_season and not force_cache, header=[0, 1]
+                    url_fixtures,
+                    filepath_fixtures,
+                    no_cache=current_season and not force_cache,
+                    header=[0, 1],
                 )
                 tree = html.parse(data_fixtures)
                 html_table = tree.xpath("//table[contains(@id, 'sched')]")[0]
                 df_table = _parse_table(html_table)
                 df_table["Match Report"] = [
-                    mlink.xpath("./a/@href")[0]
-                    if mlink.xpath("./a") and mlink.xpath("./a")[0].text == "Match Report"
-                    else None
+                    (
+                        mlink.xpath("./a/@href")[0]
+                        if mlink.xpath("./a") and mlink.xpath("./a")[0].text == "Match Report"
+                        else None
+                    )
                     for mlink in html_table.xpath(".//td[@data-stat='match_report']")
                 ]
                 df_table["league"] = lkey
@@ -841,7 +851,9 @@ class FBref(BaseRequestsReader):
                     df_table["game_id"] = game["game_id"]
                     dfs.append(df_table)
                 else:
-                    logger.warning("No stats found for home team for game with id=%s", game["game_id"])
+                    logger.warning(
+                        "No stats found for home team for game with id=%s", game["game_id"]
+                    )
                 html_table = tree.find("//table[@id='" + id_format.format(away_team["id"]) + "']")
                 if html_table is not None:
                     df_table = _parse_table(html_table)
@@ -852,7 +864,9 @@ class FBref(BaseRequestsReader):
                     df_table["game_id"] = game["game_id"]
                     dfs.append(df_table)
                 else:
-                    logger.warning("No stats found for away team for game with id=%s", game["game_id"])
+                    logger.warning(
+                        "No stats found for away team for game with id=%s", game["game_id"]
+                    )
                 df = _concat(dfs, key=['game'])
                 self.save(df, filepath)
             else:
@@ -865,8 +879,7 @@ class FBref(BaseRequestsReader):
             df.rename(columns={"#": "jersey_number"})
             .replace({"team": get_team_replacements()})
             .pipe(standardize_colnames, cols=["Player", "Nation", "Pos", "Age", "Min"])
-            .set_index(["league", "season", "game", "team", "player"])
-            .sort_index()
+            .set_index(["id"])
         )
         return df
 
@@ -941,9 +954,18 @@ class FBref(BaseRequestsReader):
                         "//table[@id='" + "stats_{}_summary".format(teams[i]["id"]) + "']"
                     )
                     df_stats_table = _parse_table(html_stats_table)
-                    df_stats_table = df_stats_table.droplevel(0, axis=1)[["Player", "#", "Pos", "Min"]]
-                    df_stats_table.columns = ["player", "jersey_number", "position", "minutes_played"]
-                    df_stats_table["jersey_number"] = df_stats_table["jersey_number"].astype("Int64")
+                    df_stats_table = df_stats_table.droplevel(0, axis=1)[
+                        ["Player", "#", "Pos", "Min"]
+                    ]
+                    df_stats_table.columns = [
+                        "player",
+                        "jersey_number",
+                        "position",
+                        "minutes_played",
+                    ]
+                    df_stats_table["jersey_number"] = df_stats_table["jersey_number"].astype(
+                        "Int64"
+                    )
                     df_table["jersey_number"] = df_table["jersey_number"].astype("Int64")
                     df_table = pd.merge(
                         df_table, df_stats_table, on=["player", "jersey_number"], how="left"
@@ -1013,7 +1035,9 @@ class FBref(BaseRequestsReader):
                 tree = html.parse(data)
                 teams = self._parse_teams(tree)
                 for team, tid in zip(teams, ["a", "b"]):
-                    html_events = tree.xpath(f"////*[@id='events_wrap']/div/div[@class='event {tid}']")
+                    html_events = tree.xpath(
+                        f"////*[@id='events_wrap']/div/div[@class='event {tid}']"
+                    )
                     for e in html_events:
                         minute = e.xpath("./div[1]")[0].text.replace("&rsquor;", "").strip()
                         score = e.xpath("./div[1]/small/span")[0].text
@@ -1082,7 +1106,7 @@ class FBref(BaseRequestsReader):
         pd.DataFrame.
         """
         urlmask = FBREF_API + "/en/matches/{}"
-        filemask = "match_{}.csv"
+        filemask = "shots_{}.csv"
 
         # Retrieve games for which a match report is available
         df_schedule = self.read_schedule(force_cache).reset_index()
@@ -1132,8 +1156,7 @@ class FBref(BaseRequestsReader):
                 standardize_colnames,
                 cols=["Outcome", "Minute", "Distance", "Player", "Body Part", "Notes", "Event"],
             )
-            .set_index(["league", "season", "game"])
-            .sort_index()
+            .set_index(["id"])
             .dropna(how="all")
         )
         return df
@@ -1160,8 +1183,23 @@ def _parse_table(html_table: html.HtmlElement) -> pd.DataFrame:
     # remove thead rows in the table body
     for elem in html_table.xpath("//tbody/tr[contains(@class, 'thead')]"):
         elem.getparent().remove(elem)
+    # remove tfoot rows in the table body
+    for elem in html_table.xpath("//tfoot"):
+        elem.getparent().remove(elem)
+    # override ranking with a unique id for each player to use as index
+    ids = []
+    for elem in html_table.xpath(
+        "tbody/tr/td[@data-stat='player']/a"
+        " | tbody/tr/th[@data-stat='player']/a"
+        " | tbody/tr/td[@data-stat='team']/a"
+        " | tbody/tr/th[@data-stat='team']/a"
+    ):
+        id = elem.attrib["href"].split("/")[3]
+        ids.append(id)
     # parse HTML to dataframe
     (df_table,) = pd.read_html(html.tostring(html_table), flavor="lxml")
+    if len(ids) > 0:
+        df_table.insert(0, "id", ids)
     return df_table.convert_dtypes()
 
 
