@@ -143,7 +143,15 @@ def tests(session: Session) -> None:
     session.install(".")
     session.install("coverage[toml]", "pytest", "pytest-mock", "time-machine", "pygments")
     try:
-        session.run("coverage", "run", "--parallel", "-m", "pytest", *args, env={"FBREFDATA_DIR": "tests/.test_data"})
+        session.run(
+            "coverage",
+            "run",
+            "--parallel",
+            "-m",
+            "pytest",
+            *args,
+            env={"FBREFDATA_DIR": "tests/.fbrefdata"},
+        )
     finally:
         if session.interactive:
             session.notify("coverage", posargs=[])
@@ -176,7 +184,7 @@ def docs_build(session: Session) -> None:
     if build_dir.exists():
         shutil.rmtree(build_dir)
 
-    session.run("sphinx-build", *args, env={"FBREFDATA_DIR": "tests/.test_data"})
+    session.run("sphinx-build", *args, env={"FBREFDATA_DIR": "tests/.fbrefdata"})
 
 
 @session(python=python_versions[0])
@@ -190,4 +198,4 @@ def docs(session: Session) -> None:
     if build_dir.exists():
         shutil.rmtree(build_dir)
 
-    session.run("sphinx-autobuild", *args, env={"FBREFDATA_DIR": "tests/.test_data"})
+    session.run("sphinx-autobuild", *args, env={"FBREFDATA_DIR": "tests/.fbrefdata"})

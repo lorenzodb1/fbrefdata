@@ -497,7 +497,7 @@ class FBref(BaseRequestsReader):
 
         # return data frame
         df = (
-            _concat(stats, key=['league', 'season', 'team'])
+            _concat(stats, key=['id'])
             .replace(
                 {
                     "Opponent": get_team_replacements(),
@@ -1135,7 +1135,7 @@ class FBref(BaseRequestsReader):
                 tree = html.parse(data)
                 html_table = tree.find("//table[@id='shots_all']")
                 if html_table is not None:
-                    df_table = _parse_table(html_table)
+                    df_table = _parse_table(html_table, "player")
                     df_table["league"] = game["league"]
                     df_table["season"] = game["season"]
                     df_table["game"] = game["game"]
