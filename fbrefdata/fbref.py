@@ -1,6 +1,5 @@
 """Scraper for http://fbref.com."""
 
-import warnings
 from datetime import date, datetime
 from functools import reduce
 from pathlib import Path
@@ -93,11 +92,10 @@ class FBref(BaseRequestsReader):
             set(BIG_FIVE_DICT.values()).issubset(self.leagues)
             and "Big 5 European Leagues Combined" not in self.leagues
         ):
-            warnings.warn(
+            logger.warning(
                 "You are trying to scrape data for all of the Big 5 European leagues. "
                 "This can be done more efficiently by setting "
-                "leagues='Big 5 European Leagues Combined'.",
-                stacklevel=1,
+                "leagues='Big 5 European Leagues Combined'."
             )
 
     @property
@@ -447,7 +445,7 @@ class FBref(BaseRequestsReader):
             else:  # special case: latest season
                 season_format = "{}-{}".format(
                     datetime.strptime(skey[:2], "%y").year,
-                    datetime.strptime(skey[2:], "%y").year,
+                    datetime.strptime(skey[3:], "%y").year,
                 )
                 url = (
                     FBREF_API
@@ -1256,7 +1254,7 @@ def _concat(dfs: List[pd.DataFrame], key: List[str]) -> pd.DataFrame:
         for i, columns in enumerate(all_columns):
             if not columns[1].equals(all_columns[0][1]):
                 res = all_columns[0].merge(columns, indicator=True, how='outer')
-                warnings.warn(
+                logger.warning(
                     (
                         "Different columns found for {first} and {cur}.\n\n"
                         + "The following columns are missing in {first}: {extra_cols}.\n\n"
@@ -1281,8 +1279,7 @@ def _concat(dfs: List[pd.DataFrame], key: List[str]) -> pd.DataFrame:
                                 .tolist(),
                             )
                         ),
-                    ),
-                    stacklevel=1,
+                    )
                 )
 
     if len(all_columns) and all_columns[0].shape[1] == 2:
