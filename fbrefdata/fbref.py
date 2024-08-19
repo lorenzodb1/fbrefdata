@@ -85,7 +85,7 @@ class FBref(BaseRequestsReader):
             no_store=no_store,
             data_dir=data_dir,
         )
-        self.rate_limit = 3
+        self.rate_limit = 6
         self.seasons = seasons  # type: ignore
         # check if all top 5 leagues are selected
         if (
@@ -737,6 +737,75 @@ class FBref(BaseRequestsReader):
         df = df.set_index(["league", "season", "game"]).sort_index()
         return df
 
+    def read_player_wages(self, force_cache: bool = False) -> pd.DataFrame:
+        """Retrieve wages from the datasource for the selected leagues and seasons.
+
+        Parameters
+        ----------
+        force_cache : bool
+             By default no cached data is used for the current season.
+             If True, will force the use of cached data anyway.
+
+        Returns
+        -------
+        pd.DataFrame
+        """
+        filemask = "wages_{}_{}.csv"
+
+        # get league IDs
+        seasons = self.read_seasons()
+
+        # collect wages
+        wages = []
+        for (lkey, skey), season in seasons.iterrows():
+            big_five = lkey == "Big 5 European Leagues Combined"
+            filepath = self.data_dir / filemask.format(lkey, skey)
+            url = (
+                FBREF_API
+                + "/".join(season.url.split("/")[:-1])
+                + "/wages/"
+                + season.url.split("/")[-1]
+            )
+            data = self.get(url, filepath)
+            if type(data) is not pd.DataFrame:
+                tree = html.parse(data)
+                # remove icons
+                for elem in tree.xpath("//td[@data-stat='comp_level']//span"):
+                    elem.getparent().remove(elem)
+                if big_five:
+                    (html_table,) = tree.xpath("//table[contains(@id, 'player_wages')]")
+                    df_table = _parse_table(html_table, "player")
+                    df_table[("Unnamed: league", "league")] = (
+                        df_table.xs("Comp", axis=1, level=1).squeeze().map(BIG_FIVE_DICT)
+                    )
+                    df_table[("Unnamed: season", "season")] = skey
+                    df_table.drop("Comp", axis=1, level=1, inplace=True)
+                else:
+                    (html_table,) = tree.xpath("//table[contains(@id, 'player_wages')]")
+                    df_table = _parse_table(html_table, "player")
+                    df_table["league"] = lkey
+                    df_table["season"] = skey
+                self.save(df_table, filepath)
+            else:
+                df_table = data
+            wages.append(df_table)
+
+        # return dataframe
+        df = _concat(wages, key=["league", "season"])
+        df = df[df.Player != "Player"]
+        df = (
+            df.drop(["Rk", "Notes"], axis=1)
+            .rename(columns={"Squad": "team"})
+            .replace({"team": get_team_replacements()})
+            .pipe(
+                standardize_colnames,
+                cols=["Player", "Nation", "Pos", "Age", "Weekly Wages", "Annual Wages"],
+            )
+            .set_index(["id"])
+        )
+
+        return df
+
     def _parse_teams(self, tree: etree.ElementTree) -> List[Dict]:
         """Parse the teams from a match summary page.
 
@@ -1192,13 +1261,19 @@ def _parse_table(html_table: html.HtmlElement, table_type: Optional[str] = None)
     ids = []
     if table_type:
         for elem in html_table.xpath(
-            f"tbody/tr/td[@data-stat='{table_type}']/a | tbody/tr/th[@data-stat='{table_type}']/a"
+            f"tbody/tr/td[@data-stat='{table_type}'] | tbody/tr/th[@data-stat='{table_type}']"
         ):
-            ids.append(elem.attrib["href"].split("/")[3])
+            elem_a = elem.xpath("a")
+            if len(elem_a) > 0:
+                ids.append(elem_a[0].attrib["href"].split("/")[3])
+            else:
+                ids.append("*")
+
     # parse HTML to dataframe
     (df_table,) = pd.read_html(html.tostring(html_table), flavor="lxml")
     if len(ids) > 0:
         df_table.insert(0, "id", ids)
+        df_table = df_table[~df_table["id"].str.startswith("*")]
     return df_table.convert_dtypes()
 
 

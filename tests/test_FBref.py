@@ -70,6 +70,10 @@ def test_read_schedule(fbref_ligue1: FBref) -> None:
     assert isinstance(fbref_ligue1.read_schedule(), pd.DataFrame)
 
 
+def test_read_wages(fbref_ligue1: FBref) -> None:
+    assert isinstance(fbref_ligue1.read_player_wages(), pd.DataFrame)
+
+
 @pytest.mark.parametrize(
     "stat_type",
     [
@@ -187,7 +191,7 @@ def test_combine_big5(mocker) -> None:  # type: ignore
         "misc",
     ],
 )
-def test_combine_big5_team_season_stats(fbref_ligue1: FBref, stat_type: str) -> None:
+def test_combine_big5_team_season_stats(stat_type: str) -> None:
     fbref_ligue1 = fd.FBref(["FRA-Ligue 1"], 2021, no_cache=True)
     fbref_bigfive = fd.FBref(["Big 5 European Leagues Combined"], 2021, no_cache=True)
     ligue1 = (
@@ -227,7 +231,7 @@ def test_combine_big5_team_season_stats(fbref_ligue1: FBref, stat_type: str) -> 
         "keeper_adv",
     ],
 )
-def test_combine_big5_player_season_stats(fbref_ligue1: FBref, stat_type: str) -> None:
+def test_combine_big5_player_season_stats(stat_type: str) -> None:
     fbref_ligue1 = fd.FBref(["FRA-Ligue 1"], 2021, no_cache=True)
     fbref_bigfive = fd.FBref(["Big 5 European Leagues Combined"], 2021, no_cache=True)
     ligue1 = (
