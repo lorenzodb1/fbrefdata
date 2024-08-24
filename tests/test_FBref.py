@@ -70,8 +70,12 @@ def test_read_schedule(fbref_ligue1: FBref) -> None:
     assert isinstance(fbref_ligue1.read_schedule(), pd.DataFrame)
 
 
-def test_read_wages(fbref_ligue1: FBref) -> None:
+def test_read_player_wages(fbref_ligue1: FBref) -> None:
     assert isinstance(fbref_ligue1.read_player_wages(), pd.DataFrame)
+
+
+def test_read_team_roasters(fbref_ligue1: FBref) -> None:
+    assert isinstance(fbref_ligue1.read_team_roasters(), pd.DataFrame)
 
 
 @pytest.mark.parametrize(

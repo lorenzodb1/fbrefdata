@@ -431,7 +431,7 @@ class FBref(BaseRequestsReader):
         # collect match logs for each team
         stats = []
         iterator.set_index(["season", "team"], append=True, inplace=True)
-        for (id, skey, team), team_url in iterator.url.items():
+        for (idx, skey, team), team_url in iterator.url.items():
             # read html page
             filepath = self.data_dir / filemask.format(team, skey, stat_type)
             if len(team_url.split('/')) == 6:  # already have season in the url
@@ -472,7 +472,7 @@ class FBref(BaseRequestsReader):
                 df_table = _parse_table(html_table, "team")
                 df_table["season"] = skey
                 df_table["team"] = team
-                df_table["id"] = id
+                df_table["id"] = idx
                 df_table["Time"] = [
                     x.get('csk', None) for x in html_table.xpath(".//td[@data-stat='start_time']")
                 ]
@@ -737,14 +737,8 @@ class FBref(BaseRequestsReader):
         df = df.set_index(["league", "season", "game"]).sort_index()
         return df
 
-    def read_player_wages(self, force_cache: bool = False) -> pd.DataFrame:
+    def read_player_wages(self) -> pd.DataFrame:
         """Retrieve wages from the datasource for the selected leagues and seasons.
-
-        Parameters
-        ----------
-        force_cache : bool
-             By default no cached data is used for the current season.
-             If True, will force the use of cached data anyway.
 
         Returns
         -------
@@ -806,23 +800,57 @@ class FBref(BaseRequestsReader):
 
         return df
 
-    def _parse_teams(self, tree: etree.ElementTree) -> List[Dict]:
-        """Parse the teams from a match summary page.
-
-        Parameters
-        ----------
-        tree : etree.ElementTree
-            The match summary page.
+    def read_team_roasters(self) -> pd.DataFrame:
+        """Retrieve roasters from the datasource for the selected leagues and seasons.
 
         Returns
         -------
-        list of dict
+        pd.DataFrame
         """
-        team_nodes = tree.xpath("//div[@class='scorebox']//strong/a")[:2]
-        teams = []
-        for team in team_nodes:
-            teams.append({"id": team.get("href").split("/")[3], "name": team.text.strip()})
-        return teams
+        filemask = "roasters_{}_{}_{}.csv"
+
+        # get league IDs
+        seasons = self.read_seasons()
+
+        # collect roasters
+        roasters = []
+        for (lkey, skey), _ in seasons.iterrows():
+            df_teams = self.read_team_season_stats(stat_type="standard")
+            dfs = []
+            for _, row in df_teams.iterrows():
+                filepath = self.data_dir / filemask.format(lkey, row.team.values[0], skey)
+                url = FBREF_API + row.url.values[0]
+                data = self.get(url, filepath, header=[0, 1])
+                if type(data) is not pd.DataFrame:
+                    tree = html.parse(data)
+                    # remove icons
+                    for elem in tree.xpath("//td[@data-stat='comp_level']//span"):
+                        elem.getparent().remove(elem)
+                    html_table = tree.xpath("//table[contains(@class, 'stats_table')]")[0]
+                    df_table = _parse_table(html_table, "player")
+                    df_table["season"] = skey
+                    df_table["team"] = row.team.values[0]
+                    self.save(df_table, filepath)
+                else:
+                    df_table = data
+                dfs.append(df_table)
+            df = pd.concat(dfs)
+            roasters.append(df)
+
+        # return dataframe
+        df = _concat(roasters, key=["league", "season"])
+        df = df[df.Player != "Player"]
+        df = (
+            df[["id", "Player", "team", "Nation", "Pos", "Age", "season"]]
+            .replace({"team": get_team_replacements()})
+            .pipe(
+                standardize_colnames,
+                cols=["Player", "Nation", "Pos", "Age"],
+            )
+            .set_index(["id"])
+        )
+        df.columns = df.columns.get_level_values(0)
+        return df
 
     def read_player_match_stats(
         self,
@@ -904,7 +932,7 @@ class FBref(BaseRequestsReader):
             if type(data) is not pd.DataFrame:
                 dfs = []
                 tree = html.parse(data)
-                (home_team, away_team) = self._parse_teams(tree)
+                (home_team, away_team) = _parse_teams(tree)
                 if stat_type == "keepers":
                     id_format = "keeper_stats_{}"
                 else:
@@ -1001,7 +1029,7 @@ class FBref(BaseRequestsReader):
             data = self.get(url, filepath)
             if type(data) is not pd.DataFrame:
                 tree = html.parse(data)
-                teams = self._parse_teams(tree)
+                teams = _parse_teams(tree)
                 html_tables = tree.xpath("//div[@class='lineup']")
                 for _, html_table in enumerate(html_tables):
                     # parse lineup table
@@ -1101,7 +1129,7 @@ class FBref(BaseRequestsReader):
             data = self.get(url, filepath)
             if type(data) is not pd.DataFrame:
                 tree = html.parse(data)
-                teams = self._parse_teams(tree)
+                teams = _parse_teams(tree)
                 for team, tid in zip(teams, ["a", "b"]):
                     html_events = tree.xpath(
                         f"////*[@id='events_wrap']/div/div[@class='event {tid}']"
@@ -1272,7 +1300,7 @@ def _parse_table(html_table: html.HtmlElement, table_type: Optional[str] = None)
     # parse HTML to dataframe
     (df_table,) = pd.read_html(html.tostring(html_table), flavor="lxml")
     if len(ids) > 0:
-        df_table.insert(0, "id", ids)
+        df_table.insert(0, "id", pd.Series(ids))
         df_table = df_table[~df_table["id"].str.startswith("*")]
     return df_table.convert_dtypes()
 
@@ -1410,3 +1438,22 @@ def _fix_nation_col(df_table: pd.DataFrame) -> pd.DataFrame:
             df_table.xs("Squad", axis=1, level=1).squeeze(),
         )
     return df_table
+
+
+def _parse_teams(tree: etree.ElementTree) -> List[Dict]:
+    """Parse the teams from a match summary page.
+
+    Parameters
+    ----------
+    tree : etree.ElementTree
+        The match summary page.
+
+    Returns
+    -------
+    list of dict
+    """
+    team_nodes = tree.xpath("//div[@class='scorebox']//strong/a")[:2]
+    teams = []
+    for team in team_nodes:
+        teams.append({"id": team.get("href").split("/")[3], "name": team.text.strip()})
+    return teams
