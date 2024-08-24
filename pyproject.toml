@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "fbrefdata"
-version = "0.3.0"
+version = "0.4.1"
 description = "A scraper of soccer data from FBref."
 authors = ["Lorenzo De Bernardini <lorenzo@envs.net>"]
 license = "Apache-2.0"
