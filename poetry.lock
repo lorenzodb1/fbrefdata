@@ -178,21 +178,6 @@ files = [
 ]
 
 [[package]]
-name = "bumpversion"
-version = "0.6.0"
-description = "Version-bump your software with a single command!"
-optional = false
-python-versions = "*"
-groups = ["dev"]
-files = [
-    {file = "bumpversion-0.6.0-py2.py3-none-any.whl", hash = "sha256:4eb3267a38194d09f048a2179980bb4803701969bff2c85fa8f6d1ce050be15e"},
-    {file = "bumpversion-0.6.0.tar.gz", hash = "sha256:4ba55e4080d373f80177b4dabef146c07ce73c7d1377aabf9d3c3ae1f94584a6"},
-]
-
-[package.dependencies]
-bump2version = "*"
-
-[[package]]
 name = "certifi"
 version = "2024.2.2"
 description = "Python package for providing Mozilla's CA Bundle."
@@ -2992,4 +2977,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.9,<3.14"
-content-hash = "34209f12c0d3c53aa51aeb48c40d556b8c19783edb55a792ae36bd28efa3a937"
+content-hash = "c962b7eb599ae2dee0f031fd2e1a914b59f9938885dacb89e10fc8fbefdda9eb"
