@@ -5,7 +5,6 @@ CODE = fbrefdata
 PY = 3.11
 
 init:
-	python3 -m venv .venv
 	poetry install
 
 test:

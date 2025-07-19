@@ -1,8 +1,8 @@
 [tool.poetry]
 name = "fbrefdata"
 version = "0.4.1"
-description = "A scraper of soccer data from FBref."
-authors = ["Lorenzo De Bernardini <lorenzo@envs.net>"]
+description = "A scraper of football data from FBref."
+authors = ["lorenzodb1 <lorenzo@envs.net>"]
 license = "Apache-2.0"
 readme = 'README.md'
 homepage = "https://github.com/lorenzodb1/fbrefdata"
@@ -15,9 +15,9 @@ classifiers = [
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.13"
+python = ">=3.9,<3.14"
 pandas = "^2.0.0, !=2.1.0"
-requests = "^2.23"
+requests = "2.32.4"
 unicode = "^2.7"
 lxml = "^5.0.0"
 Unidecode = "^1.2.0"
@@ -26,7 +26,7 @@ PySocks = "^1.7.1"
 html5lib = "^1.1"
 undetected-chromedriver = "^3.5.0"
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"
 mypy = "^1.0"
 pylint = "^3.0.0"
@@ -50,8 +50,6 @@ time-machine = "^2.8.2"
 pytest-mock = "^3.10.0"
 bumpversion = "^0.6.0"
 nbsphinx = "^0.9.0"
-
-[tool.poetry.group.dev.dependencies]
 nox = "^2023.4.22"
 
 [tool.isort]

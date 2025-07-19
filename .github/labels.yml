@@ -58,30 +58,6 @@
 - name: wontfix
   description: This will not be worked on
   color: ffffff
-- name: common
-  description: Issue or pull request related to all scrapers
-  color: F1C40F
-- name: ClubElo
-  description: Issue or pull request related to the ClubElo scraper
-  color: "273746"
-- name: ESPN
-  description: Issue or pull request related to the ESPN scraper
-  color: "943126"
 - name: FBref
   description: Issue or pull request related to the FBref scraper
   color: 145A32
-- name: FiveThirtyEight
-  description: Issue or pull request related to the FiveThirtyEight scraper
-  color: E67E22
-- name: FotMob
-  description: Issue or pull request related to the FotMob scraper
-  color: 228B22
-- name: MatchHistory
-  description: Issue or pull request related to the MatchHistory scraper
-  color: 1A5276
-- name: SoFIFA
-  description: Issue or pull request related to the SoFIFA scraper
-  color: 138D75
-- name: WhoScored
-  description: Issue or pull request related to the WhoScored scraper
-  color: 76448A
