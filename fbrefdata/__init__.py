@@ -1,9 +1,9 @@
 """A collection of tools to read and process soccer data from various sources."""
 
-__version__ = '0.4.1'
+__version__ = "0.4.1"
 
 __all__ = [
-    'FBref',
+    "FBref",
 ]
 
 from .fbref import FBref
