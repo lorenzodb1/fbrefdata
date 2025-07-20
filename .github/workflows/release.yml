@@ -3,8 +3,8 @@ name: Build & Release Python Package 🚀
 on:
   push:
     tags:
-      - "v*.*.*"        # e.g. v1.2.3
-      - "v*.*.*-*"      # e.g. v1.2.3-alpha, v0.5.0-beta
+      - "v*.*.*"
+      - "v*.*.*-*"
 
 jobs:
   build:
