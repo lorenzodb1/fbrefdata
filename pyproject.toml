@@ -1,97 +1,17 @@
-[tool.poetry]
+[project]
 name = "fbrefdata"
-version = "0.4.1"
-description = "A scraper of football data from FBref."
-authors = ["lorenzodb1 <lorenzo@envs.net>"]
-license = "Apache-2.0"
-readme = 'README.md'
-homepage = "https://github.com/lorenzodb1/fbrefdata"
-repository = "https://github.com/lorenzodb1/fbrefdata"
-keywords = ["fbref", "soccer", "football", "soccer data", "web scraping", "soccer analytics"]
-classifiers = [
-    "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent"
+version = "1.0.0"
+description = "Scrape soccer data from FBref."
+authors = [
+    {name = "lorenzodb1"}
+]
+license = {text = "Apache-2.0"}
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
 ]
 
-[tool.poetry.dependencies]
-python = ">=3.9,<3.14"
-pandas = "^2.0.0, !=2.1.0"
-requests = "2.32.4"
-unicode = "^2.7"
-lxml = "^5.0.0"
-Unidecode = "^1.2.0"
-rich = "^13.0.0"
-PySocks = "^1.7.1"
-html5lib = "^1.1"
-undetected-chromedriver = "^3.5.0"
-
-[tool.poetry.group.dev.dependencies]
-pytest = "^8.0.0"
-mypy = "^1.0"
-pylint = "^3.0.0"
-pytest-deadfixtures = "^2.2.1"
-unify = "^0.5"
-black = "^24.0.0"
-Sphinx = "^7.0.0"
-sphinx-autobuild = "^2024.0.0"
-furo = "^2024.0.0"
-coverage = {version = "^7.0", extras = ["toml"]}
-pre-commit = "^3.0.0"
-flake8 = "^7.0.0"
-flake8-bugbear = "^24.0.0"
-flake8-docstrings = "^1.6.0"
-flake8-rst-docstrings = "^0.3.0"
-pep8-naming = "^0.13.2"
-darglint = "^1.8.1"
-pre-commit-hooks = "^4.3.0"
-Pygments = "^2.13.0"
-time-machine = "^2.8.2"
-pytest-mock = "^3.10.0"
-nbsphinx = "^0.9.0"
-nox = "^2023.4.22"
-bump2version = "^1.0.1"
-
-[tool.isort]
-profile = "black"
-src_paths = ["fbrefdata", "tests"]
-balanced_wrapping = true
-default_section = "THIRDPARTY"
-include_trailing_comma = true
-known_first_party = ["fbrefdata", "tests"]
-line_length = 79
-multi_line_output = 3
-
-[tool.black]
-line-length = 99
-target-version = ['py38']
-skip-string-normalization = 1
-include = '\.pyi?$'
-
-[tool.coverage.paths]
-source = ["fbrefdata", "*/site-packages"]
-
-[tool.coverage.run]
-branch = true
-source = ["fbrefdata"]
-
-[tool.coverage.report]
-show_missing = true
-ignore_errors = true
-
-[tool.mypy]
-ignore_missing_imports = true
-disallow_untyped_defs = true
-disallow_incomplete_defs = true
-no_implicit_optional = true
-check_untyped_defs = true
-show_error_codes = true
-warn_unused_ignores = true
-
-[[tool.mypy.overrides]]
-module = ["tests.*"]
-disallow_untyped_defs = false
 
 [build-system]
-requires = ["poetry>=0.12"]
-build-backend = "poetry.masonry.api"
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
